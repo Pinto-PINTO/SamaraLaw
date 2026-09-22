@@ -90,11 +90,49 @@ function Logo({ footer = false }: { footer?: boolean }) {
 function Index() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState("");
 
-  function submitForm(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSent(true);
+  function validate(data: FormData) {
+    const e: Record<string, string> = {};
+    const name = String(data.get("name") ?? "").trim();
+    const contact = String(data.get("contact") ?? "").trim();
+    const message = String(data.get("message") ?? "").trim();
+    if (!/^[\p{L}][\p{L}' .-]{1,79}$/u.test(name) || !/\p{L}{2,}/u.test(name)) e["name"] = "Please enter your full name (letters only).";
+    const isEmail = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(contact);
+    const digits = contact.replace(/\D/g, "");
+    const isPhone = /^[+\d\s().-]+$/.test(contact) && digits.length >= 10 && digits.length <= 15;
+    if (!isEmail && !isPhone) e["contact"] = "Enter a valid email (name@example.com) or phone number (10+ digits).";
+    if (message.length < 10) e["message"] = "Please describe what happened (at least 10 characters).";
+    else if (message.length > 2000) e["message"] = "Please keep your message under 2000 characters.";
+    return e;
   }
+
+  async function submitForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitError("");
+    const data = new FormData(event.currentTarget);
+    const found = validate(data);
+    setErrors(found);
+    if (Object.keys(found).length) return;
+    if (data.get("bot-field")) { setSent(true); return; }
+    setSending(true);
+    try {
+      const body = new URLSearchParams();
+      data.forEach((value, key) => body.append(key, String(value).trim()));
+      const res = await fetch("/__forms.html", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+      if (!res.ok) throw new Error(String(res.status));
+      setSent(true);
+    } catch {
+      setSubmitError("Sorry, your message could not be sent. Please try again in a moment.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const fieldClass = "mt-2 w-full border-0 border-b border-input bg-transparent py-2 text-base font-normal normal-case tracking-normal outline-none focus:border-gold aria-[invalid=true]:border-destructive";
+  const errorText = (key: string) => errors[key] ? <span role="alert" className="mt-1 block text-[11px] font-medium normal-case tracking-normal text-destructive">{errors[key]}</span> : null;
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-paper text-foreground">
@@ -141,12 +179,15 @@ function Index() {
 
           <div id="consultation" className="reveal-up scroll-mt-28 overflow-hidden rounded-sm border border-gold/25 bg-card shadow-form [animation-delay:150ms] lg:col-span-5">
             <div className="bg-primary px-5 py-5 text-primary-foreground sm:px-7 sm:py-6"><h2 className="text-xl">Free Case Evaluation</h2><p className="mt-1 text-xs uppercase tracking-wider text-gold-soft">Confidential and no obligation</p></div>
-            {sent ? <div className="flex min-h-80 flex-col items-center justify-center p-8 text-center"><span className="mb-5 grid size-12 place-items-center rounded-full bg-gold-soft"><Check className="text-gold-dark" /></span><h3 className="mb-3 text-2xl">Thank you for reaching out.</h3><p className="max-w-sm text-sm leading-6 text-muted-foreground">Your message has been recorded in this preview. Connect your preferred inbox before publishing to receive submissions.</p></div> :
-            <form onSubmit={submitForm} className="space-y-5 p-5 sm:p-7">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Full name<input required name="name" className="mt-2 w-full border-0 border-b border-input bg-transparent py-2 text-base font-normal normal-case outline-none focus:border-gold" /></label>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email or phone<input required name="contact" className="mt-2 w-full border-0 border-b border-input bg-transparent py-2 text-base font-normal normal-case outline-none focus:border-gold" /></label>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How were you injured?<textarea required name="message" rows={3} className="mt-2 w-full resize-none border-0 border-b border-input bg-transparent py-2 text-base font-normal normal-case outline-none focus:border-gold" /></label>
-              <Button type="submit" variant="gold" className="w-full">Request Evaluation <ArrowRight className="size-4" /></Button>
+            {sent ? <div className="flex min-h-80 flex-col items-center justify-center p-8 text-center"><span className="mb-5 grid size-12 place-items-center rounded-full bg-gold-soft"><Check className="text-gold-dark" /></span><h3 className="mb-3 text-2xl">Thank you for reaching out.</h3><p className="max-w-sm text-sm leading-6 text-muted-foreground">We have received your message and will contact you as soon as possible.</p></div> :
+            <form name="case-evaluation" method="POST" data-netlify="true" netlify-honeypot="bot-field" onSubmit={submitForm} noValidate className="space-y-5 p-5 sm:p-7">
+              <input type="hidden" name="form-name" value="case-evaluation" />
+              <p className="hidden"><label>Leave empty<input name="bot-field" tabIndex={-1} autoComplete="off" /></label></p>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Full name<input name="name" autoComplete="name" maxLength={80} aria-invalid={!!errors["name"]} className={fieldClass} />{errorText("name")}</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email or phone<input name="contact" autoComplete="email" maxLength={120} aria-invalid={!!errors["contact"]} className={fieldClass} />{errorText("contact")}</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How were you injured?<textarea name="message" rows={3} maxLength={2000} aria-invalid={!!errors["message"]} className={`${fieldClass} resize-none`} />{errorText("message")}</label>
+              {submitError && <p role="alert" className="text-sm text-destructive">{submitError}</p>}
+              <Button type="submit" variant="gold" className="w-full" disabled={sending}>{sending ? "Sending..." : <>Request Evaluation <ArrowRight className="size-4" /></>}</Button>
                <div className="space-y-2 text-center text-[10px] leading-4 text-muted-foreground">
                  <p>No attorney’s fee unless we recover compensation for you. Court costs and case expenses may be the client’s responsibility unless otherwise agreed in writing.</p>
                  <p>Sending this form does not create an attorney-client relationship.</p>
