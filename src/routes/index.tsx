@@ -11,32 +11,61 @@ import footerLogo from "@/assets/smara-law-firm-logo-footer.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Personal Injury Lawyers | Samara Law Firm LLC" },
-      { name: "description", content: "Samara Law Firm LLC provides focused personal injury representation, clear guidance, and determined advocacy for injured people." },
+      { title: "Samara Laws | Personal Injury Lawyers | Samara Law Firm LLC" },
+      { name: "description", content: "Samara Law Firm LLC (Samara Laws) provides focused personal injury representation for car accidents, slip and falls, serious injuries, and wrongful death. Free case evaluation." },
       { name: "robots", content: "index, follow, max-image-preview:large" },
-      { name: "keywords", content: "personal injury lawyer, accident lawyer, injury law firm, motor vehicle accident, premises liability, wrongful death" },
-      { property: "og:title", content: "Personal Injury Lawyers | Samara Law Firm LLC" },
+      { name: "keywords", content: "Samara Laws, Samara Law Firm, Samara Law Firm LLC, personal injury lawyer, personal injury attorney, accident lawyer, car accident lawyer, truck accident lawyer, motorcycle accident lawyer, pedestrian accident lawyer, slip and fall lawyer, premises liability, serious injury lawyer, wrongful death lawyer, injury law firm, free case evaluation, no win no fee lawyer" },
+      { property: "og:title", content: "Samara Laws | Personal Injury Lawyers" },
       { property: "og:description", content: "Focused personal injury representation when your recovery and future matter most." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://samaralaws.com/" },
       { property: "og:site_name", content: "Samara Law Firm LLC" },
       { property: "og:locale", content: "en_CA" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Personal Injury Lawyers | Samara Law Firm LLC" },
+      { name: "twitter:title", content: "Samara Laws | Personal Injury Lawyers" },
       { name: "twitter:description", content: "Focused personal injury representation when your recovery and future matter most." },
     ],
-    links: [{ rel: "canonical", href: "/" }],
-    scripts: [{
-      type: "application/ld+json",
-      children: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: faqs.map(([question, answer]) => ({
-          "@type": "Question",
-          name: question,
-          acceptedAnswer: { "@type": "Answer", text: answer },
-        })),
-      }),
-    }],
+    links: [{ rel: "canonical", href: "https://samaralaws.com/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              "@id": "https://samaralaws.com/#website",
+              url: "https://samaralaws.com/",
+              name: "Samara Laws",
+              alternateName: ["Samara Law Firm LLC", "Samara Law Firm"],
+            },
+            {
+              "@type": "LegalService",
+              "@id": "https://samaralaws.com/#firm",
+              name: "Samara Law Firm LLC",
+              alternateName: "Samara Laws",
+              url: "https://samaralaws.com/",
+              logo: "https://samaralaws.com/favicon.png",
+              image: "https://samaralaws.com/favicon.png",
+              description: "Personal injury representation for motor vehicle accidents, premises liability, serious injuries, and wrongful death.",
+              knowsAbout: ["Personal injury", "Motor vehicle accidents", "Premises liability", "Serious injuries", "Wrongful death"],
+            },
+          ],
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqs.map(([question, answer]) => ({
+            "@type": "Question",
+            name: question,
+            acceptedAnswer: { "@type": "Answer", text: answer },
+          })),
+        }),
+      },
+    ],
   }),
   component: Index,
 });
@@ -55,7 +84,7 @@ const faqs = [
 ];
 
 function Logo({ footer = false }: { footer?: boolean }) {
-  return <img src={footer ? footerLogo : transparentLogo} alt="Samara Law Firm LLC" className={footer ? "h-32 w-auto sm:h-36" : "h-14 w-auto sm:h-16"} />;
+  return <img src={footer ? footerLogo : transparentLogo} alt="Samara Law Firm LLC" className={footer ? "h-32 w-auto sm:h-36" : "h-[4.5rem] w-auto sm:h-24"} />;
 }
 
 function Index() {
